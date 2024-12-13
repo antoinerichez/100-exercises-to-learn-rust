@@ -6,6 +6,7 @@
 // You also need to add a `get` method that takes as input a `TicketId`
 // and returns an `Option<&Ticket>`.
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use ticket_fields::{TicketDescription, TicketTitle};
 
 #[derive(Clone)]
@@ -38,14 +39,32 @@ pub enum Status {
 }
 
 impl TicketStore {
+
     pub fn new() -> Self {
         Self {
             tickets: Vec::new(),
         }
     }
 
-    pub fn add_ticket(&mut self, ticket: Ticket) {
-        self.tickets.push(ticket);
+    pub fn add_ticket(&mut self, ticket: TicketDraft) -> TicketId {
+        static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+        let id = TicketId(NEXT_ID.fetch_add(1, Ordering::Release).into());
+
+        let created = Ticket {
+            title: ticket.title,
+            description: ticket.description,
+            status: Status::ToDo,
+            id
+        };
+
+        self.tickets.push(created);
+
+        id
+    }
+
+    fn get(&self, id: TicketId) -> Option<&Ticket> {
+        self.tickets.iter().find(|x| x.id.0 == id.0)
     }
 }
 
