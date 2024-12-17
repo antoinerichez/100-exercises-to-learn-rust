@@ -1,10 +1,11 @@
-// TODO: Given a static slice of integers, split the slice into two halves and
-//  sum each half in a separate thread.
-//  Do not allocate any additional memory!
+use std::ops::Add;
 use std::thread;
 
 pub fn sum(slice: &'static [i32]) -> i32 {
-    todo!()
+    let first_thread = thread::spawn(|| slice[..slice.len() / 2].iter().sum::<i32>());
+    let rest_thread = thread::spawn(|| slice[slice.len() / 2..].iter().sum::<i32>());
+
+    first_thread.join().unwrap().add(rest_thread.join().unwrap())
 }
 
 #[cfg(test)]
